@@ -2,7 +2,7 @@ import io
 import os
 import uuid
 from config import *
-from xlsToCsv import toCsv
+from xlsToCsv.xlsToCsv import toCsv
 import shutil
 
 def usuariosConPermisos():
