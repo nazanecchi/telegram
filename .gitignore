@@ -1,2 +1,7 @@
 **/config.py
 **/config_ngrok.yml
+ContactosDream/example.csv
+ContactosDream/input.xls
+ContactosDream/output.csv
+ContactosDream/users.txt
+__pycache__/
