@@ -1,5 +1,5 @@
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 
 header1 = ["Name", "Given Name", "Additional Name", "Family Name", "Yomi Name", "Given Name Yomi", "Additional Name Yomi", 
               "Family Name Yomi", "Name Prefix", "Name Suffix", "Initials", "Nickname", "Short Name", "Maiden Name", 
@@ -57,6 +57,9 @@ class Persona:
         self.codigoPostal = ""
         self.telefono1 = ""
         self.telefono2 = ""
+        self.etiquetas = []
+        self.siglas = ""
+        self.numeroPVV = []
 
 
 def cargarSubject(persona = Persona()):
@@ -64,29 +67,33 @@ def cargarSubject(persona = Persona()):
     subject = subject + "\nID: " + persona.id 
     subject = subject + "\nNivel de Linea: " + persona.nivelLinea
     subject = subject + "\nPais: " + persona.pais
-    subject = subject + "\nNivel: " + persona.nivelEquipo
+    subject = subject + "\nNivel: " + persona.nivelEquipo + " (" + persona.siglas + ")"
     subject = subject + "\nDia de Registro: " + datetime.strptime(persona.fechaSolicitud, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y") + " (" + persona.añosHerbalife + " años en Herbalife)"
-    subject = subject + "\nRenovacion"
+    subject = subject + "\nRenovacion: " + datetime.strptime(persona.fechaLimiteRenovacion, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y")
+    if datetime.strptime(persona.fechaLimiteRenovacion, "%Y-%m-%d %H:%M:%S") < datetime.now():
+         subject = subject + " (licencia expirada)"
     subject = subject + "\nCumpleaños: " + datetime.strptime(persona.cumpleanos, "%Y-%m-%d %H:%M:%S").strftime("%d/%m")
     subject = subject + ("\nFecha de calificación a supervisor: " + datetime.strptime(persona.fechaCalificacionSupervisor, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y") if persona.fechaCalificacionSupervisor != 'nan' else "")
     subject = subject + ("\nFecha de calificación a productor calificado: " + datetime.strptime(persona.fechaCalificacionProductor, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y") if persona.fechaCalificacionProductor != 'nan' else "")
     subject = subject + ("\nCalificación supervisor: " + persona.metodoCalificacionSP if persona.metodoCalificacionSP != "No disponible" else "") 
     subject = subject + ("\nHa recalificado supervisor: " + persona.recalificado if persona.recalificado != "nan" else "") 
     subject = subject + ("\nHa recalificado AWT: " + persona.awt if persona.awt != "nan" else "") 
-    subject = subject + ("\nNombre del cónyuge: "  + persona.nombreConyugue if persona.nombreConyugue != "nan" else "") 
+    subject = subject + ("\nNombre del cónyuge: "  + persona.nombreConyugue if persona.nombreConyugue != "  " else "") 
     subject = subject + "\nVolumen Comprado Personalmente (PPV): "
     for i in persona.volumenCompradoPersonalmente:
-        subject = subject + "\n" + i
-
+        subject = subject + "\n       * " + i
+    subject = subject + "\nEtiquetas:"
+    for i in persona.etiquetas:
+        subject = subject + "\n   * " + i
     return subject
 
 def cargar_csv(persona = Persona()):
     notes = cargarSubject(persona)
     row = {
-            "Name": persona.nombre + " " + persona.apellido,
+            "Name": persona.nombre + cargar_emojis(persona) + " " + persona.apellido + " (" + persona.siglas + "-" + persona.nivelLinea + ")" + " " + datetime.strptime(persona.fechaSolicitud, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y"),
             "Given Name": persona.nombre,
             "Additional Name": "",
-            "Family Name": persona.apellido,
+            "Family Name": persona.apellido + " (" + persona.siglas + "-" + persona.nivelLinea + ")" + " " + datetime.strptime(persona.fechaSolicitud, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y"),
             "Yomi Name": "",
             "Given Name Yomi": "",
             "Additional Name Yomi": "",
@@ -147,6 +154,94 @@ def cargar_csv(persona = Persona()):
         }
     return row
 
+def cargar_etiquetas(persona = Persona()):
+    etiquetas = []
+    con = 0
+    etiquetas.append("members20#")
+    if datetime.strptime(persona.cumpleanos, "%Y-%m-%d %H:%M:%S").month == datetime.now().month:
+         etiquetas.append("birthday")
+    if datetime.strptime(persona.fechaLimiteRenovacion, "%Y-%m-%d %H:%M:%S") < datetime.now():
+         etiquetas.append("sin_licencia")
+    elif datetime.strptime(persona.fechaLimiteRenovacion, "%Y-%m-%d %H:%M:%S") - timedelta(months=3) > datetime.now():
+         etiquetas.append("renovar_licencia")
+    for i in persona.numeroPVV:
+        if i == "0":
+            con = con + 1
+        else:
+            break
+    if con > 0:
+        etiquetas.append(str(con) + "_mes_sin_pedir")
+    return etiquetas
+
+
+def cargar_emojis(persona = Persona()):
+    emojis = "💚"
+    for i in persona.etiquetas:
+        if i == "sin_licencia":
+            emojis = emojis + "❌"
+        elif i.endswith("_mes_sin_pedir"):
+            num = i.replace("_mes_sin_pedir", "")
+            for j in num:
+                emojis = emojis + calcNum(j)
+        elif i == "birthday":
+            emojis = emojis + "🎂"
+        elif i == "renovar_licencia":
+            emojis = emojis + "❗"
+    return emojis
+
+def calcNum(j):
+    match j:
+        case "0":
+            return "0️⃣"
+        case "1":
+            return "1️⃣"
+        case "2":
+            return "2️⃣"
+        case "3":
+            return "3️⃣"
+        case "4":
+            return "4️⃣"
+        case "5":
+            return "5️⃣"
+        case "6":
+            return "6️⃣"
+        case "7":
+            return "7️⃣"
+        case "8":
+            return "8️⃣"
+        case "9":
+            return "9️⃣"
+        
+def cargarsiglas(nombre = ""):
+    nombre = nombre.upper()
+    match nombre:
+        case "EQUIPO MILLONARIO":
+            return "NR"
+        case "DISTRIBUIDOR":
+            return "DS"
+        case "CONSULTOR SENIOR":
+            return "CS"
+        case "PRODUCTOR CALIFICADO":
+            return "QP"
+        case "SUPERVISOR":
+            return "SP"
+        case "EQUIPO MUNDIAL":
+            return "WT"
+        case "EQUIPO MUNDIAL ACTIVO":
+            return "WTA"
+        case "GET":
+            return "GET"
+        case "GET2500":
+            return "GET2500"
+        case "MILLONARIO TEAM":
+            return "MT"
+        case "MILLONARIO TEAM 7500":
+            return "MT7500"
+        case "PRESIDENTE":
+            return "PT"
+        case _:
+            return "??"
+
 def agregar_persona(title, fil):
     persona = Persona()
     for i, celd in enumerate(title):
@@ -162,6 +257,7 @@ def agregar_persona(title, fil):
             persona.apellido = fil[i].title()
         elif celd == "Nivel del Equipo":
             persona.nivelEquipo = fil[i]
+            persona.siglas = cargarsiglas(fil[i])
         elif celd.endswith("Volumen Total"):
             date = celd.replace("  Volumen Total", "")
             persona.volumenTotal.append(date + ": " + fil[i])
@@ -171,15 +267,16 @@ def agregar_persona(title, fil):
         elif celd.endswith("Volumen Comprado Personalmente"):
             date = celd.replace("  Volumen Comprado Personalmente", "")
             persona.volumenCompradoPersonalmente.append(date + ": " + fil[i])
+            persona.numeroPVV.append(fil[i])
         elif celd.endswith("Royalties"):
             date = celd.replace("  Royalties", "")
             persona.royalities.append(date + ": " + fil[i])
         elif celd == "Correo electrónico":
-            persona.correoElectronico = fil[i]
+            persona.correoElectronico = fil[i].lower()
         elif celd == "País":
             persona.pais = fil[i]
         elif celd == "Patrocinador":
-            persona.patrocinador = fil[i]
+            persona.patrocinador = fil[i].title()
         elif celd == "Cuenta de la Línea Descendente Visible":
             persona.cuentaLineaDescendenteVisible = fil[i]
         elif celd == "Método de Calificación de SP":
@@ -187,9 +284,9 @@ def agregar_persona(title, fil):
         elif celd == "Número ID del Patrocinador":
             persona.idPatrocinador = fil[i]
         elif celd == "Nombre (Localizado)":
-            persona.nombreLocalizado = fil[i]
+            persona.nombreLocalizado = fil[i].title()
         elif celd == "Apellidos (Localizados)":
-            persona.apellidoLocalizado = fil[i]
+            persona.apellidoLocalizado = fil[i].title()
         elif celd == "Nombre del cónyuge":
             persona.nombreConyugue = fil[i].title()
         elif celd == "Total VT":
@@ -244,9 +341,10 @@ def agregar_persona(title, fil):
             persona.telefono1 = fil[i]
         elif celd == "Teléfono Tardes":
             persona.telefono2 = fil[i]
+    persona.etiquetas = cargar_etiquetas(persona)
     return cargar_csv(persona)
 
-def excel_sheet_to_csv(excel_file, sheet_name, csv_file):
+def excel_sheet_to_csv(excel_file, sheet_name, file_path):
     
     # Guardar el encabezado y el DataFrame como archivo CSV
     df_csv = pd.DataFrame(columns=header1)
@@ -262,15 +360,13 @@ def excel_sheet_to_csv(excel_file, sheet_name, csv_file):
     for i in matrix:
         rows.append(agregar_persona(title, i))
         df_csv = pd.DataFrame(rows, columns=header1)
-        df_csv.to_csv(csv_file, index=False)
-    
-    print(f'Se ha convertido la hoja "{sheet_name}" del archivo "{excel_file}" a "{csv_file}" exitosamente.')
+        df_csv.to_csv(file_path, index=False)
 
-if __name__ == "__main__":
+
+    # Guardar el DataFrame como archivo CSV en el path especificado
+def toCsv(excel_file, file_path):
     # Nombre del archivo de Excel y CSV
-    excel_file = 'input.xls'
     sheet_name = 'Report'  # Nombre de la segunda hoja o índice de la hoja (0-indexed)
-    csv_file = 'output.csv'
     
     # Llamar a la función para convertir la segunda hoja
-    excel_sheet_to_csv(excel_file, sheet_name, csv_file)
+    excel_sheet_to_csv(excel_file, sheet_name, file_path)
