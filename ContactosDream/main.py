@@ -30,10 +30,6 @@ def handle_agregar_usuario(message):
 def handle_agregar_usuario(message):
     usuarios(message)
 
-@bot.message_handler(content_types=['text'])
-def bot_texto(message):
-    bot.send_message(message.chat.id, message.text, parse_mode="html")
-
 # Manejador para documentos
 @bot.message_handler(content_types=['document'])
 def manejar_documento(message):

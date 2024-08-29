@@ -22,10 +22,11 @@ def soySuperUsuario(message):
     
 def eliminar(message):
     if soySuperUsuario(message):
-        if message.username in usuariosConPermisos():
-            usuario = message.text.split('/eliminar ')[1]
-            if usuario[0] == '@':
+        usuario = message.text.split('/eliminar ')[1]
+        if usuario[0] == '@':
                 usuario = message.text.split('@')[1]
+        print("/" + usuario + "/")
+        if usuario in usuariosConPermisos():
             if any(char.isspace() for char in usuario):
                 bot.reply_to(message, "Formato de usuario invalido")
                 return
@@ -35,6 +36,7 @@ def eliminar(message):
                 new_content = content.replace(usuario+"\n", '')
                 with open('users.txt', 'w') as file:
                     file.write(new_content)
+                bot.reply_to(message, "Usuario eliminado")
             except:
                 bot.reply_to(message, "Error en la eliminacion, intentelo mas tarde")
         else:
@@ -43,16 +45,18 @@ def eliminar(message):
 
 def agregar(message):
     if soySuperUsuario(message):
-        if not  message.username in usuariosConPermisos():
-            usuario = message.text.split('/agregar ')[1]
-            if usuario[0] == '@':
+        usuario = message.text.split('/agregar ')[1]
+        if usuario[0] == '@':
                 usuario = message.text.split('@')[1]
+        print("/" + usuario + "/")
+        if not  usuario in usuariosConPermisos():
             if any(char.isspace() for char in usuario):
                 bot.reply_to(message, "Formato de usuario invalido")
                 return
             try:
                 with open('users.txt', 'a') as file:
                     file.write(usuario + '\n')
+                bot.reply_to(message, "Usuario agregado")
             except:
                 bot.reply_to(message, "Error en la insercion, intentelo mas tarde")
         else:
@@ -80,7 +84,7 @@ def es_archivo_excel(file_name):
     return any(file_name.lower().endswith(ext) for ext in extensiones_excel)
 
 def transformar_documento(message):
-    if message.username in usuariosConPermisos() or soySuperUsuario(message):
+    if (message.from_user.username in usuariosConPermisos()) or soySuperUsuario(message):
         file_name = message.document.file_name
         
         if es_archivo_excel(file_name):
@@ -95,7 +99,7 @@ def transformar_documento(message):
                 os.makedirs(folder_path, exist_ok=True)
                 toCsv(file_stream, file_path)
                 with open(file_path, 'rb') as file:
-                    bot.send_document(message.chat.id, file, caption='Aquí está tu archivo CSV generado.', reply_to_message_id=message.message_id)
+                    bot.send_document(message.chat.id, file,  reply_to_message_id=message.message_id)
                 shutil.rmtree(folder_path)
             except Exception as e:
                 print(e)
