@@ -1,5 +1,6 @@
 import pandas as pd
-from datetime import datetime, timedelta
+from datetime import datetime
+from dateutil.relativedelta import relativedelta
 
 header1 = ["Name", "Given Name", "Additional Name", "Family Name", "Yomi Name", "Given Name Yomi", "Additional Name Yomi", 
               "Family Name Yomi", "Name Prefix", "Name Suffix", "Initials", "Nickname", "Short Name", "Maiden Name", 
@@ -91,7 +92,7 @@ def cargar_csv(persona = Persona()):
     notes = cargarSubject(persona)
     row = {
             "Name": persona.nombre + cargar_emojis(persona) + " " + persona.apellido + " (" + persona.siglas + "-" + persona.nivelLinea + ")" + " " + datetime.strptime(persona.fechaSolicitud, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y"),
-            "Given Name": persona.nombre,
+            "Given Name": persona.nombre + cargar_emojis(persona),
             "Additional Name": "",
             "Family Name": persona.apellido + " (" + persona.siglas + "-" + persona.nivelLinea + ")" + " " + datetime.strptime(persona.fechaSolicitud, "%Y-%m-%d %H:%M:%S").strftime("%d/%m/%Y"),
             "Yomi Name": "",
@@ -124,10 +125,10 @@ def cargar_csv(persona = Persona()):
             "IM 1 - Type": "",
             "IM 1 - Service": "",
             "IM 1 - Value": "",
-            "Phone 1 - Type": ("Personal" if persona.telefono1 != "nan" else ""),
-            "Phone 1 - Value": (persona.telefono1 if persona.telefono1 != "nan" else ""),
-            "Phone 2 - Type": ("Work" if persona.telefono2 != "nan" else ""),
-            "Phone 2 - Value": (persona.telefono2 if persona.telefono2 != "nan" else ""),
+            "Phone 1 - Type": ("Personal" if persona.telefono1 != "+" else ""),
+            "Phone 1 - Value": (persona.telefono1 if persona.telefono1 != "+" else ""),
+            "Phone 2 - Type": ("Work" if persona.telefono2 != "+" else ""),
+            "Phone 2 - Value": (persona.telefono2 if persona.telefono2 != "+" else ""),
             "Phone 3 - Type": "",
             "Phone 3 - Value": "",
             "Phone 4 - Type": "",
@@ -162,7 +163,7 @@ def cargar_etiquetas(persona = Persona()):
          etiquetas.append("birthday")
     if datetime.strptime(persona.fechaLimiteRenovacion, "%Y-%m-%d %H:%M:%S") < datetime.now():
          etiquetas.append("sin_licencia")
-    elif datetime.strptime(persona.fechaLimiteRenovacion, "%Y-%m-%d %H:%M:%S") - timedelta(months=3) > datetime.now():
+    elif datetime.strptime(persona.fechaLimiteRenovacion, "%Y-%m-%d %H:%M:%S") < datetime.now() + relativedelta(months=3):
          etiquetas.append("renovar_licencia")
     for i in persona.numeroPVV:
         if i == "0":
@@ -258,19 +259,10 @@ def agregar_persona(title, fil):
         elif celd == "Nivel del Equipo":
             persona.nivelEquipo = fil[i]
             persona.siglas = cargarsiglas(fil[i])
-        elif celd.endswith("Volumen Total"):
-            date = celd.replace("  Volumen Total", "")
-            persona.volumenTotal.append(date + ": " + fil[i])
-        elif celd.endswith("VP"):
-            date = celd.replace("  VP", "")
-            persona.vp.append(date + ": " + fil[i])
         elif celd.endswith("Volumen Comprado Personalmente"):
             date = celd.replace("  Volumen Comprado Personalmente", "")
             persona.volumenCompradoPersonalmente.append(date + ": " + fil[i])
             persona.numeroPVV.append(fil[i])
-        elif celd.endswith("Royalties"):
-            date = celd.replace("  Royalties", "")
-            persona.royalities.append(date + ": " + fil[i])
         elif celd == "Correo electrónico":
             persona.correoElectronico = fil[i].lower()
         elif celd == "País":
@@ -299,18 +291,6 @@ def agregar_persona(title, fil):
             persona.volumenTotalLineaDescendente = fil[i]
         elif celd == "Total RO":
             persona.totalRO = fil[i]
-        elif celd.endswith(" VT (Volumen documentado/para calificar)"): #desde aca
-            date = celd.replace(" VT (Volumen documentado/para calificar)", "")
-            persona.vt.append(date + ": " + fil[i])
-        elif celd.endswith(" VP (Volumen documentado/para calificar)"):
-            date = celd.replace(" VP (Volumen documentado/para calificar)", "")
-            persona.vp.append(date + ": " + fil[i])
-        elif celd.endswith(" VAP (Volumen documentado/para calificar)"):
-            date = celd.replace(" VAP (Volumen documentado/para calificar)", "")
-            persona.vap.append(date + ": " + fil[i])
-        elif celd.endswith(" VLD (Volumen documentado/para calificar)"):
-            date = celd.replace(" VLD (Volumen documentado/para calificar)", "")
-            persona.vld.append(date + ": " + fil[i])
         elif celd == "Calificante a AWT (año fiscal actual)":
             persona.awt = fil[i]
         elif celd == "¿Ha Recalificado?":
@@ -338,9 +318,9 @@ def agregar_persona(title, fil):
         elif celd == "Código Postal":
             persona.codigoPostal = fil[i]
         elif celd == "Teléfono preferente":
-            persona.telefono1 = fil[i]
+            persona.telefono1 = "+" + ''.join([c for c in fil[i] if c.isdigit()])
         elif celd == "Teléfono Tardes":
-            persona.telefono2 = fil[i]
+            persona.telefono2 = "+" + ''.join([c for c in fil[i] if c.isdigit()])
     persona.etiquetas = cargar_etiquetas(persona)
     return cargar_csv(persona)
 

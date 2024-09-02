@@ -83,7 +83,7 @@ def es_archivo_excel(file_name):
     # Verifica si la extensión del archivo está en la lista
     return any(file_name.lower().endswith(ext) for ext in extensiones_excel)
 
-def transformar_documento(message):
+def transformar_documento(message, sent_message):
     if (message.from_user.username in usuariosConPermisos()) or soySuperUsuario(message):
         file_name = message.document.file_name
         
@@ -98,12 +98,15 @@ def transformar_documento(message):
                 file_path = os.path.join(folder_path, file_name)
                 os.makedirs(folder_path, exist_ok=True)
                 toCsv(file_stream, file_path)
+                bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
                 with open(file_path, 'rb') as file:
                     bot.send_document(message.chat.id, file,  reply_to_message_id=message.message_id)
                 shutil.rmtree(folder_path)
             except Exception as e:
                 print(e)
+                bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
                 bot.reply_to(message, "Archivo invalido")
             
         else:
+            bot.delete_message(chat_id=message.chat.id, message_id=sent_message.message_id)
             bot.reply_to(message, "Este archivo no es un archivo de Excel.")

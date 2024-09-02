@@ -3,4 +3,4 @@ pip install flask
 pip install xlrd
 pip install pyngrok
 pip install pytelegrambotapi
-
+pip install openpyxl

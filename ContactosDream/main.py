@@ -6,7 +6,6 @@ from flask import Flask, request
 from pyngrok import ngrok, conf
 
 web_server = Flask(__name__)
-
 @web_server.route('/', methods = ['POST'])
 def webhook():
     if(request.headers.get("content-type") == "application/json"):
@@ -33,7 +32,8 @@ def handle_agregar_usuario(message):
 # Manejador para documentos
 @bot.message_handler(content_types=['document'])
 def manejar_documento(message):
-    transformar_documento(message)
+    sent_message = bot.reply_to(message, "Procesando archivo")
+    transformar_documento(message, sent_message)
 
 if __name__ == '__main__':
     print("Iniciando bot")
